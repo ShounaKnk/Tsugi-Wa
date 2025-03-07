@@ -9,14 +9,21 @@ import os
 dataset = pd.read_csv('anime-dataset.csv')
 
 # List of important features
-important_features = ["Genres", "Synopsis"]
+important_features = ["Genres", "Synopsis", 'Source', 'Studios', 'Aired', 'Rating']
 
 # Fill missing values
 for feature in important_features:
-    dataset[feature] = dataset[feature].fillna("")
+    dataset[feature] = dataset[feature].replace('UNKNOWN', 'not_specified').fillna('not_specified')
 
 # Combine important features for similarity calculation
-dataset['combined_features'] = dataset["Genres"] + " " + dataset["Synopsis"]
+    dataset['combined_features'] = (
+    (dataset["Genres"] + " ")*3 + 
+    (dataset["Rating"]+" ")*3 +
+    (dataset["Source"] + " ")*2 + 
+    (dataset["Studios"]+ " ")*2 + 
+    (dataset["Synopsis"] + " ")*1 + 
+    (dataset["Aired"])*1
+)
 
 # Reset index and create AnimeIndex column for consistent reference
 dataset = dataset.reset_index(drop=True)
@@ -45,7 +52,8 @@ all_anime_eng = dataset['EnglishName'].tolist()
 anime_name = input('Enter your favourite anime: ')
 
 def find_best_match(anime_name, anime_list):
-    close_matches = difflib.get_close_matches(anime_name, anime_list, n=1, cutoff=0.6)
+    close_matches = difflib.get_close_matches(anime_name, anime_list)
+    print(close_matches)
     return close_matches[0] if close_matches else None
 
 # Try finding the closest match in English first, then Japanese
@@ -60,6 +68,8 @@ if closest_match is None:
 if closest_match is None:
     print("No matching anime found.")
     exit()
+else:
+    print("anime similar to ", closest_match, ": ")
 
 # Get the index of the closest matching anime
 if jap:
@@ -81,7 +91,7 @@ recommended_anime = set()
 i = 1
 
 print("\nRecommended Anime:")
-for index, score in sorted_similarity_score[1:20]:  # Check more entries to ensure unique suggestions
+for index, score in sorted_similarity_score[1:50]:  # Check more entries to ensure unique suggestions
     if not jap:
         anime_from_index = get_anime_name(index, 'EnglishName')
         if anime_from_index == 'UNKNOWN' or anime_from_index is None:
@@ -89,10 +99,17 @@ for index, score in sorted_similarity_score[1:20]:  # Check more entries to ensu
     else:
         anime_from_index = get_anime_name(index, 'JapaneseName')
 
-    if anime_from_index and anime_from_index not in recommended_anime:  # Ensure unique recommendations
-        print(f"{i}. {anime_from_index}")
-        recommended_anime.add(anime_from_index)
-        i += 1
+    if anime_from_index and anime_from_index not in recommended_anime:
+        if not closest_match in anime_from_index:
+            # print(f"{i}. {anime_from_index}")
+            recommended_anime.add(anime_from_index)
+            i += 1
+
+i = 1
+for recomendation in recommended_anime:
+    print(f"{i}. {recomendation}")
+    i+=1
+
 
 # If no recommendations found
 if i == 1:
