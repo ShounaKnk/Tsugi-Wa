@@ -53,7 +53,6 @@ anime_name = input('Enter your favourite anime: ')
 
 def find_best_match(anime_name, anime_list):
     close_matches = difflib.get_close_matches(anime_name, anime_list)
-    print(close_matches)
     return close_matches[0] if close_matches else None
 
 # Try finding the closest match in English first, then Japanese
@@ -87,7 +86,7 @@ def get_anime_name(index, language):
     return result[0] if result.size > 0 else None
 
 # Store unique recommendations to avoid duplicates
-recommended_anime = set()
+recommended_anime = []
 i = 1
 
 print("\nRecommended Anime:")
@@ -101,7 +100,6 @@ for index, score in sorted_similarity_score[1:50]:  # Check more entries to ensu
 
     popularity = dataset[dataset.AnimeIndex == index]["Popularity"].values
     score = dataset[dataset.AnimeIndex == index]["Score"].values
-    # print(popularity, score)
 
     if anime_from_index and anime_from_index not in recommended_anime:
         if not closest_match in anime_from_index:
@@ -109,12 +107,12 @@ for index, score in sorted_similarity_score[1:50]:  # Check more entries to ensu
                 popularity = float(popularity[0])
                 score = score[0]
                 if popularity > 90 and 7.0 <= score <=10.0:
-                    recommended_anime.add(anime_from_index)
+                    recommended_anime.append((anime_from_index, score))
             i += 1
-
+recommended_anime.sort(key=lambda x:x[1], reverse=True)
 i = 1
-for recomendation in recommended_anime:
-    print(f"{i}. {recomendation}")
+for recomendation, score in recommended_anime:
+    print(f"{i}. {recomendation} Score {score}")
     i+=1
 
 
