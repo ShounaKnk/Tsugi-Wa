@@ -9,21 +9,6 @@ import os
 dataset = pd.read_csv('anime-dataset.csv')
 
 # List of important features
-important_features = ["Genres", "Synopsis", 'Source', 'Studios', 'Aired', 'Rating']
-
-# Fill missing values
-for feature in important_features:
-    dataset[feature] = dataset[feature].replace('UNKNOWN', 'not_specified').fillna('not_specified')
-
-# Combine important features for similarity calculation
-    dataset['combined_features'] = (
-    (dataset["Genres"] + " ")*3 + 
-    (dataset["Rating"]+" ")*3 +
-    (dataset["Source"] + " ")*2 + 
-    (dataset["Studios"]+ " ")*2 + 
-    (dataset["Synopsis"] + " ")*1 + 
-    (dataset["Aired"])*1
-)
 
 # Reset index and create AnimeIndex column for consistent reference
 dataset = dataset.reset_index(drop=True)
@@ -35,6 +20,21 @@ if os.path.exists(similarity_matrix):
     similarity = np.load(similarity_matrix)
     print('Loaded saved similarity matrix')
 else:
+    important_features = ["Genres", "Synopsis", 'Source', 'Studios', 'Aired', 'Rating']
+
+    # Fill missing values
+    for feature in important_features:
+        dataset[feature] = dataset[feature].replace('UNKNOWN', 'not_specified').fillna('not_specified')
+
+    # Combine important features for similarity calculation
+        dataset['combined_features'] = (
+        (dataset["Genres"] + " ")*3 + 
+        (dataset["Rating"]+" ")*2+
+        (dataset["Source"] + " ")*2 + 
+        (dataset["Studios"]+ " ")*2 + 
+        (dataset["Synopsis"] + " ")*1 + 
+        (dataset["Aired"])*1
+    )
     vectorizer = TfidfVectorizer()
     vectorized_features = vectorizer.fit_transform(dataset["combined_features"])
     similarity = cosine_similarity(vectorized_features)
@@ -99,10 +99,17 @@ for index, score in sorted_similarity_score[1:50]:  # Check more entries to ensu
     else:
         anime_from_index = get_anime_name(index, 'JapaneseName')
 
+    popularity = dataset[dataset.AnimeIndex == index]["Popularity"].values
+    score = dataset[dataset.AnimeIndex == index]["Score"].values
+    # print(popularity, score)
+
     if anime_from_index and anime_from_index not in recommended_anime:
         if not closest_match in anime_from_index:
-            # print(f"{i}. {anime_from_index}")
-            recommended_anime.add(anime_from_index)
+            if popularity.size > 0 and score.size>0:
+                popularity = float(popularity[0])
+                score = score[0]
+                if popularity > 90 and 7.0 <= score <=10.0:
+                    recommended_anime.add(anime_from_index)
             i += 1
 
 i = 1
