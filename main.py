@@ -4,7 +4,10 @@ from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 import difflib
 import os
+import streamlit as st
 
+
+st.title("hello World")
 # Load dataset
 dataset = pd.read_csv('anime-dataset.csv')
 
@@ -58,7 +61,6 @@ def find_best_match(anime_name, anime_list):
 # Try finding the closest match in English first, then Japanese
 closest_match = find_best_match(anime_name, all_anime_eng)
 jap = False
-
 if closest_match is None:
     jap = True
     closest_match = find_best_match(anime_name, all_anime_jap)
@@ -85,10 +87,15 @@ def get_anime_name(index, language):
     result = dataset.loc[dataset.AnimeIndex == index, language].values
     return result[0] if result.size > 0 else None
 
+utter_trash = ["Love Live!", "BanG Dream!", "The iDOLM@STER"]
+def isTrash(anime):
+    for trash in utter_trash:
+        if trash.lower() in anime.lower():
+            return True
+
 # Store unique recommendations to avoid duplicates
 recommended_anime = []
 i = 1
-
 print("\nRecommended Anime:")
 for index, score in sorted_similarity_score[1:50]:  # Check more entries to ensure unique suggestions
     if not jap:
@@ -97,12 +104,13 @@ for index, score in sorted_similarity_score[1:50]:  # Check more entries to ensu
             anime_from_index = get_anime_name(index, 'JapaneseName')
     else:
         anime_from_index = get_anime_name(index, 'JapaneseName')
-
     popularity = dataset[dataset.AnimeIndex == index]["Popularity"].values
     score = dataset[dataset.AnimeIndex == index]["Score"].values
 
     if anime_from_index and anime_from_index not in recommended_anime:
         if not closest_match in anime_from_index:
+            if isTrash(anime_from_index):
+                continue
             if popularity.size > 0 and score.size>0:
                 popularity = float(popularity[0])
                 score = score[0]
@@ -112,10 +120,11 @@ for index, score in sorted_similarity_score[1:50]:  # Check more entries to ensu
 recommended_anime.sort(key=lambda x:x[1], reverse=True)
 i = 1
 for recomendation, score in recommended_anime:
-    print(f"{i}. {recomendation} Score {score}")
+    print(f"{i}. {recomendation} (Score {score})")
     i+=1
 
 
 # If no recommendations found
 if i == 1:
     print("No similar anime found.")
+
